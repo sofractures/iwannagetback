@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>I Wanna Get Back by Sound of Fractures</title>
+    <meta name="description" content="Race back through time collecting nostalgic treasures while dodging digital distractions. Rotate your phone for the best experience." />
+    
+    <!-- Open Graph (link preview) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="I Wanna Get Back by Sound of Fractures" />
+    <meta property="og:description" content="Race back through time collecting nostalgic treasures while dodging digital distractions. Play now." />
+    <meta property="og:image" content="/assets/previewcard.jpg" />
+    <meta property="og:image:alt" content="Sound of Fractures – I Wanna Get Back" />
+    <meta property="og:url" content="https://iwannagetback.soundoffractures.com" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="I Wanna Get Back by Sound of Fractures" />
+    <meta name="twitter:description" content="Race back through time collecting nostalgic treasures while dodging digital distractions. Play now." />
+    <meta name="twitter:image" content="/assets/previewcard.jpg" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        background: #667eea;
+        font-family: 'Arial', sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      
+      #spaceBackground {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        background: #667eea;
+        pointer-events: none;
+      }
+      
+      .game-container {
+        background: #000;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+      }
+
+      
+      
+      /* Logo container - visible on desktop by default; mobile overrides below */
+      #logo-container {
+        display: block;
+        width: 100%;
+        max-width: 800px; /* align with game width on desktop */
+        margin: 16px auto 8px auto;
+        text-align: center;
+      }
+      #logo-container img {
+        display: block;
+        height: auto;
+        margin: 0 auto;
+        max-width: 70%; /* tasteful size on desktop */
+      }
+      
+      .game-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+        pointer-events: none;
+      }
+      
+      #app {
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+        width: 800px;
+        height: 450px;
+        margin: 0 auto;
+      }
+      
+      #app canvas {
+        display: block;
+        margin: 0 auto;
+        position: relative;
+      }
+      
+      
+      .controls-info {
+        color: rgba(255,255,255,0.7);
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.9rem;
+        max-width: 600px;
+      }
+      .controls-info .show-desktop { display: block; }
+      .controls-info .show-mobile { display: none; }
+      
+      .gameplay-description {
+        background: rgba(255,255,255,0.1);
+        padding: 30px;
+        border-radius: 15px;
+        margin-top: 30px;
+        color: white;
+        font-size: 1rem;
+        line-height: 1.6;
+        border: 1px solid rgba(255,255,255,0.2);
+        max-width: 800px;
+        text-align: left;
+      }
+      
+      .gameplay-description h2 {
+        color: #4ecdc4;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+        text-align: center;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      }
+      
+      .gameplay-description p {
+        margin-bottom: 15px;
+      }
+      
+      .gameplay-description p:last-child {
+        margin-bottom: 0;
+      }
+      
+      /* Listen Now Button Styles */
+      .listen-now-container {
+        display: flex;
+        justify-content: center;
+        margin: 30px 0;
+        max-width: 800px;
+        width: 100%;
+      }
+      
+      .listen-now-button {
+        display: inline-block;
+        transition: transform 0.3s ease, filter 0.3s ease;
+        text-decoration: none;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        border: none;
+        outline: none;
+      }
+      
+      .listen-now-button:hover {
+        transform: translateY(-3px) scale(1.05);
+        filter: brightness(1.1);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.4);
+      }
+      
+      .listen-now-button img {
+        display: block;
+        max-width: 200px;
+        height: auto;
+        border-radius: 8px;
+        border: none;
+        outline: none;
+      }
+      
+      
+      
+      @media (max-width: 900px) {
+        body {
+          padding: 10px;
+          justify-content: flex-start;
+        }
+        
+        .game-container {
+          padding: 0;
+          max-width: calc(100vw - 20px);
+          box-sizing: border-box;
+          overflow: hidden;
+          margin-top: 6vh; /* push game closer to thumbs */
+        }
+
+        
+        
+        #app {
+          width: 800px;
+          height: 450px;
+          max-width: 100%;
+          overflow: hidden;
+        }
+        
+        /* Show logo on mobile and size it nicely */
+        #logo-container {
+          display: block;
+          width: 100%;
+          max-width: calc(100vw - 20px);
+          margin: 2vh auto 0 auto;
+          text-align: center;
+        }
+        #logo-container img {
+          max-width: 70%;
+          max-height: 14vh;
+        }
+        
+        .controls-info {
+          font-size: 0.8rem;
+          margin-top: 15px;
+          padding: 0 10px;
+        }
+        .controls-info .show-desktop { display: none; }
+        .controls-info .show-mobile { display: block; }
+        
+        .gameplay-description {
+          padding: 20px;
+          font-size: 0.9rem;
+          margin-top: 20px;
+        }
+        
+        .gameplay-description h2 {
+          font-size: 1.5rem;
+        }
+        
+        /* Mobile Listen Now Button */
+        .listen-now-container {
+          margin: 20px 0;
+          padding: 0 10px;
+        }
+        
+        .listen-now-button img {
+          max-width: 160px;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        body {
+          padding: 5px;
+          justify-content: flex-start;
+        }
+        
+        .game-container {
+          padding: 0;
+          border-radius: 8px;
+          max-width: calc(100vw - 10px);
+          box-sizing: border-box;
+          overflow: hidden;
+          margin-top: 6vh; /* push game closer to thumbs */
+        }
+
+        
+        
+        #app {
+          width: 800px;
+          height: 450px;
+          max-width: 100%;
+          overflow: hidden;
+        }
+        
+        /* Logo sizing for small phones */
+        #logo-container {
+          display: block;
+          width: 100%;
+          max-width: calc(100vw - 10px);
+          margin: 1.5vh auto 0 auto;
+          text-align: center;
+        }
+        #logo-container img {
+          max-width: 78%;
+          max-height: 12vh;
+        }
+        
+        .controls-info {
+          font-size: 0.75rem;
+          margin-top: 10px;
+          padding: 0 5px;
+        }
+        
+        .gameplay-description {
+          padding: 15px;
+          font-size: 0.85rem;
+          margin-top: 15px;
+        }
+        
+        .gameplay-description h2 {
+          font-size: 1.3rem;
+        }
+        
+        /* Small Mobile Listen Now Button */
+        .listen-now-container {
+          margin: 15px 0;
+          padding: 0 5px;
+        }
+        
+        .listen-now-button img {
+          max-width: 140px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="spaceBackground"></canvas>
+    <!-- Mobile-only game logo -->
+    <div id="logo-container">
+      <img src="/assets/gamenamelogo.png" alt="Game Logo" />
+    </div>
+    <div class="game-container">
+      <div id="app"></div>
+    </div>
+    
+    <div class="controls-info">
+      <p class="show-desktop"><strong>Desktop:</strong> Use arrow keys to move and spacebar to jump</p>
+      <p class="show-mobile"><strong>Mobile:</strong> Use the on-screen touch controls. For a better experience, rotate your phone to landscape.</p>
+      <br>
+      <p><strong>🎵 Play the game to get a free download of the new Sound of Fractures release 'I Wanna Get Back' and enter into weekly draws for free merch.</strong></p>
+    </div>
+    
+    <!-- Listen Now Button -->
+    <div class="listen-now-container">
+      <a href="https://symphony.to/sound-of-fractures/i-wanna-get-back" target="_blank" rel="noopener noreferrer" class="listen-now-button">
+        <img src="/assets/listennowbutton.png" alt="Listen Now" />
+      </a>
+    </div>
+    
+    <div class="gameplay-description">
+      <h2>Gameplay</h2>
+      <p>Your mission is to race back through time, gathering nostalgic treasures before they vanish into the scroll. Scattered across each level are nostalgic items: iPods, vinyl, CDs, mixtapes, photographs, and even the indestructible Nokia phone. Collect them to build your wellbeing score and stay grounded in what really matters.</p>
+      
+      <p>But beware, the digital world fights back. Pop-up ads, mobile phones, and endless notifications will try to distract you, pulling you deeper into the doomscroll. Dodge, jump, and fight to keep your memories safe. Top scorers and finishers will also be entered into exclusive merch giveaways, because sometimes the best rewards live outside the screen.</p>
+    </div>
+    
+    
+    <script>
+      class SpaceBackground {
+        constructor(canvas) {
+          this.canvas = canvas;
+          this.ctx = canvas.getContext('2d');
+          this.stars = [];
+          this.numStars = 150;
+          this.spawnTimer = 0;
+          this.spawnRate = 8;
+          this.animationId = null;
+          
+          this.canvas.width = window.innerWidth;
+          this.canvas.height = window.innerHeight;
+          
+          this.centerX = this.canvas.width / 2;
+          this.centerY = this.canvas.height / 2;
+
+          this.init();
+        }
+
+        init() {
+          // Initialize stars with random positions
+          for (let i = 0; i < this.numStars; i++) {
+            const star = new Star();
+            star.distance = Math.random() * Math.max(this.canvas.width, this.canvas.height);
+            this.stars.push(star);
+          }
+
+          // Handle window resize
+          window.addEventListener('resize', () => this.handleResize());
+        }
+
+        handleResize() {
+          this.canvas.width = window.innerWidth;
+          this.canvas.height = window.innerHeight;
+          this.centerX = this.canvas.width / 2;
+          this.centerY = this.canvas.height / 2;
+        }
+
+        start() {
+          this.animate();
+        }
+
+        stop() {
+          if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+          }
+        }
+
+        animate = () => {
+          this.ctx.fillStyle = 'rgba(102, 126, 234, 0.1)';
+          this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+          // Spawn new stars
+          this.spawnTimer++;
+          if (this.spawnTimer >= this.spawnRate && this.stars.length < this.numStars) {
+            this.stars.push(new Star());
+            this.spawnTimer = 0;
+          }
+
+          // Update and draw stars
+          const maxDist = Math.max(this.canvas.width, this.canvas.height) * 1.5;
+          this.stars = this.stars.filter((star) => {
+            star.update();
+            star.draw(this.ctx, this.centerX, this.centerY);
+            return star.distance <= maxDist;
+          });
+
+          this.animationId = requestAnimationFrame(this.animate);
+        }
+
+        destroy() {
+          this.stop();
+          window.removeEventListener('resize', () => this.handleResize());
+        }
+      }
+
+      class Star {
+        constructor() {
+          this.distance = 0;
+          this.angle = Math.random() * Math.PI * 2;
+          this.speed = Math.random() * 1.5 + 0.8;
+          this.size = Math.random() * 2 + 2;
+          this.color = '#ffffff';
+        }
+
+        update() {
+          this.distance += this.speed;
+        }
+
+        draw(ctx, centerX, centerY) {
+          const x = Math.round(centerX + Math.cos(this.angle) * this.distance);
+          const y = Math.round(centerY + Math.sin(this.angle) * this.distance);
+          
+          ctx.fillStyle = this.color;
+          ctx.fillRect(x, y, this.size, this.size);
+        }
+      }
+
+      // Initialize when DOM is ready
+      document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('spaceBackground');
+        
+        if (canvas) {
+          const spaceBackground = new SpaceBackground(canvas);
+          spaceBackground.start();
+          
+          // Store reference globally for cleanup if needed
+          window.spaceBackground = spaceBackground;
+          
+          console.log('✨ Space background initialized!');
+        }
+      });
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
