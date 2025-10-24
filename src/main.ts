@@ -78,6 +78,8 @@ class PlayScene extends Phaser.Scene {
   private leaderboardTimer?: Phaser.Time.TimerEvent
   private initialsInput?: Phaser.GameObjects.Text
   private emailInput?: Phaser.GameObjects.Text
+  private initialsBox?: Phaser.GameObjects.Rectangle
+  private emailBox?: Phaser.GameObjects.Rectangle
   private submitButton?: Phaser.GameObjects.Text
   private currentInput: 'initials' | 'email' = 'initials'
   private initialsText: string = ''
@@ -2134,9 +2136,14 @@ class PlayScene extends Phaser.Scene {
     this.leaderboardScreen.add(initialsLabel)
     
     // Initials input box
-    const initialsBox = this.add.rectangle(0, -20, 120, 40, 0x000000, 0.8)
-    initialsBox.setStrokeStyle(2, 0x00ff00)
-    this.leaderboardScreen.add(initialsBox)
+    this.initialsBox = this.add.rectangle(0, -20, 120, 40, 0x000000, 0.8)
+    this.initialsBox.setStrokeStyle(2, 0x00ff00)
+    this.initialsBox.setInteractive()
+    this.initialsBox.on('pointerdown', () => {
+      this.currentInput = 'initials'
+      this.updateInputHighlight()
+    })
+    this.leaderboardScreen.add(this.initialsBox)
     
     this.initialsInput = this.add.text(0, -20, '', {
       fontFamily: 'ui, Arial, sans-serif',
@@ -2160,9 +2167,14 @@ class PlayScene extends Phaser.Scene {
     this.leaderboardScreen.add(emailLabel)
     
     // Email input box
-    const emailBox = this.add.rectangle(0, 50, 300, 40, 0x000000, 0.8)
-    emailBox.setStrokeStyle(2, 0xffffff)
-    this.leaderboardScreen.add(emailBox)
+    this.emailBox = this.add.rectangle(0, 50, 300, 40, 0x000000, 0.8)
+    this.emailBox.setStrokeStyle(2, 0xffffff)
+    this.emailBox.setInteractive()
+    this.emailBox.on('pointerdown', () => {
+      this.currentInput = 'email'
+      this.updateInputHighlight()
+    })
+    this.leaderboardScreen.add(this.emailBox)
     
     this.emailInput = this.add.text(0, 50, '', {
       fontFamily: 'ui, Arial, sans-serif',
@@ -2290,16 +2302,24 @@ class PlayScene extends Phaser.Scene {
   }
 
   private updateInputHighlight() {
-    if (!this.initialsInput || !this.emailInput) {
+    if (!this.initialsInput || !this.emailInput || !this.initialsBox || !this.emailBox) {
       return // Don't try to update if input fields don't exist
     }
     
     if (this.currentInput === 'initials') {
+      // Highlight initials field
       this.initialsInput.setStyle({ color: '#00ff00' })
+      this.initialsBox.setStrokeStyle(2, 0x00ff00)
+      // De-highlight email field
       this.emailInput.setStyle({ color: '#ffffff' })
+      this.emailBox.setStrokeStyle(2, 0xffffff)
     } else {
-      this.initialsInput.setStyle({ color: '#ffffff' })
+      // Highlight email field
       this.emailInput.setStyle({ color: '#00ff00' })
+      this.emailBox.setStrokeStyle(2, 0x00ff00)
+      // De-highlight initials field
+      this.initialsInput.setStyle({ color: '#ffffff' })
+      this.initialsBox.setStrokeStyle(2, 0xffffff)
     }
   }
 
@@ -3376,6 +3396,12 @@ const config: Phaser.Types.Core.GameConfig = {
   height: 450,
   parent: 'app',
   backgroundColor: '#000000',
+  input: {
+    // Disable wheel event prevention to allow page scrolling
+    mouse: {
+      preventDefaultWheel: false
+    }
+  },
   physics: {
     default: 'arcade',
     arcade: {
