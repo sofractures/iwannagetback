@@ -46,6 +46,7 @@ class PlayScene extends Phaser.Scene {
   private heartParticles?: Phaser.GameObjects.Particles.ParticleEmitter
   private sparkleParticles?: Phaser.GameObjects.Particles.ParticleEmitter
   private loadingText?: Phaser.GameObjects.Text
+  private bossInstructionText?: Phaser.GameObjects.Text
   private baseSpeed: number = 600 // Higher base speed for high-tempo gameplay
   private speedMultiplier: number = 1.0
   private levelSpeed: number = 1.0 // Speed multiplier for current level
@@ -3130,6 +3131,9 @@ class PlayScene extends Phaser.Scene {
       console.log('Could not play boss spawn sound:', error)
     }
     
+    // Show instruction text when boss spawns
+    this.showBossInstruction()
+    
     // Boss uses hit system (no visible health bar)
     
     // Start magical trail particles for Boss 1 and 2
@@ -3152,7 +3156,42 @@ class PlayScene extends Phaser.Scene {
 
   // Boss hit system - no visual health bar needed
 
-
+  private showBossInstruction() {
+    // Clean up any existing instruction text
+    if (this.bossInstructionText) {
+      this.bossInstructionText.destroy()
+      this.bossInstructionText = undefined
+    }
+    
+    const width = this.scale.width
+    const height = this.scale.height
+    
+    // Create instruction text centered on screen
+    this.bossInstructionText = this.add.text(width / 2, height / 2, 'Stomp on the boss to advance to the next level!', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '28px',
+      color: '#00ff00',
+      stroke: '#000000',
+      strokeThickness: 4,
+      align: 'center',
+    })
+    this.bossInstructionText.setOrigin(0.5, 0.5)
+    this.bossInstructionText.setDepth(10001) // Above boss and everything else
+    
+    // Fade out after 4 seconds
+    this.tweens.add({
+      targets: this.bossInstructionText,
+      alpha: 0,
+      duration: 1000, // 1 second fade
+      delay: 3000, // Show for 3 seconds, then fade over 1 second (total 4 seconds)
+      onComplete: () => {
+        if (this.bossInstructionText) {
+          this.bossInstructionText.destroy()
+          this.bossInstructionText = undefined
+        }
+      }
+    })
+  }
 
   private defeatBoss() {
     if (!this.currentBoss) return
@@ -3162,6 +3201,12 @@ class PlayScene extends Phaser.Scene {
     this.bossDefeated = true
     this.lastBossDeathScore = this.score
     this.defeatedBosses.add(bossNumber)
+    
+    // Clean up instruction text if still visible
+    if (this.bossInstructionText) {
+      this.bossInstructionText.destroy()
+      this.bossInstructionText = undefined
+    }
     
     // Play boss death sound
     try {
