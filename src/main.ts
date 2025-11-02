@@ -84,6 +84,9 @@ class PlayScene extends Phaser.Scene {
   private currentInput: 'initials' | 'email' = 'initials'
   private initialsText: string = ''
   private emailText: string = ''
+  // HTML input elements for mobile keyboard support
+  private initialsHTMLInput?: HTMLInputElement
+  private emailHTMLInput?: HTMLInputElement
   private bosses!: Phaser.Physics.Arcade.Group
   private currentBoss?: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
   private bossHealth: number = 0
@@ -2142,6 +2145,10 @@ class PlayScene extends Phaser.Scene {
     this.initialsBox.on('pointerdown', () => {
       this.currentInput = 'initials'
       this.updateInputHighlight()
+      // On mobile, focus the HTML input to trigger keyboard
+      if (this.isMobileDevice() && this.initialsHTMLInput) {
+        this.initialsHTMLInput.focus()
+      }
     })
     this.leaderboardScreen.add(this.initialsBox)
     
@@ -2173,6 +2180,10 @@ class PlayScene extends Phaser.Scene {
     this.emailBox.on('pointerdown', () => {
       this.currentInput = 'email'
       this.updateInputHighlight()
+      // On mobile, focus the HTML input to trigger keyboard
+      if (this.isMobileDevice() && this.emailHTMLInput) {
+        this.emailHTMLInput.focus()
+      }
     })
     this.leaderboardScreen.add(this.emailBox)
     
@@ -2218,56 +2229,259 @@ class PlayScene extends Phaser.Scene {
     console.log('Leaderboard screen shown! Initials field is active for immediate typing.')
   }
 
-  private setupLeaderboardInput() {
-    // Clear existing keyboard handlers
-    this.input.keyboard!.off('keydown')
+  private createHTMLInputs() {
+    // Only create HTML inputs on mobile devices
+    if (!this.isMobileDevice()) {
+      return
+    }
+
+    // Get the canvas element and its container
+    const canvas = this.game.canvas
+    const gameContainer = document.querySelector('#app') as HTMLElement
+    if (!canvas || !gameContainer) {
+      console.warn('Could not find canvas or game container for HTML inputs')
+      return
+    }
+
+    // Calculate canvas position and scaling
+    const canvasRect = canvas.getBoundingClientRect()
     
-    // Set up keyboard input for leaderboard
-    this.input.keyboard!.on('keydown', (event: KeyboardEvent) => {
-      // Prevent default behavior for certain keys
-      if (event.key === 'Tab') {
-        event.preventDefault()
+    // Get scale factors (canvas might be scaled on mobile)
+    const scaleX = canvasRect.width / this.scale.width
+    const scaleY = canvasRect.height / this.scale.height
+    
+    // Get the leaderboard screen container's world position
+    const leaderboardX = this.scale.width / 2
+    const leaderboardY = this.scale.height / 2
+    
+    // Initials box dimensions and position in game coordinates
+    const initialsBoxWidth = 120
+    const initialsBoxHeight = 40
+    const initialsBoxX = leaderboardX - initialsBoxWidth / 2
+    const initialsBoxY = leaderboardY - 20 - initialsBoxHeight / 2
+    
+    // Email box dimensions and position in game coordinates
+    const emailBoxWidth = 300
+    const emailBoxHeight = 40
+    const emailBoxX = leaderboardX - emailBoxWidth / 2
+    const emailBoxY = leaderboardY + 50 - emailBoxHeight / 2
+    
+    // Initials HTML input
+    this.initialsHTMLInput = document.createElement('input')
+    this.initialsHTMLInput.type = 'text'
+    this.initialsHTMLInput.maxLength = 3
+    this.initialsHTMLInput.pattern = '[A-Za-z]*'
+    this.initialsHTMLInput.inputMode = 'text'
+    this.initialsHTMLInput.style.position = 'fixed'
+    this.initialsHTMLInput.style.width = `${initialsBoxWidth * scaleX}px`
+    this.initialsHTMLInput.style.height = `${initialsBoxHeight * scaleY}px`
+    this.initialsHTMLInput.style.opacity = '0'
+    this.initialsHTMLInput.style.background = 'transparent'
+    this.initialsHTMLInput.style.border = 'none'
+    this.initialsHTMLInput.style.outline = 'none'
+    this.initialsHTMLInput.style.color = 'transparent'
+    this.initialsHTMLInput.style.fontSize = `${24 * scaleY}px`
+    this.initialsHTMLInput.style.textAlign = 'center'
+    this.initialsHTMLInput.style.textTransform = 'uppercase'
+    this.initialsHTMLInput.style.pointerEvents = 'auto'
+    this.initialsHTMLInput.style.zIndex = '10000'
+    
+    // Position initials input (accounting for canvas position and scaling)
+    const initialsX = canvasRect.left + (initialsBoxX * scaleX)
+    const initialsY = canvasRect.top + (initialsBoxY * scaleY)
+    this.initialsHTMLInput.style.left = `${initialsX}px`
+    this.initialsHTMLInput.style.top = `${initialsY}px`
+    
+    // Email HTML input
+    this.emailHTMLInput = document.createElement('input')
+    this.emailHTMLInput.type = 'email'
+    this.emailHTMLInput.inputMode = 'email'
+    this.emailHTMLInput.style.position = 'fixed'
+    this.emailHTMLInput.style.width = `${emailBoxWidth * scaleX}px`
+    this.emailHTMLInput.style.height = `${emailBoxHeight * scaleY}px`
+    this.emailHTMLInput.style.opacity = '0'
+    this.emailHTMLInput.style.background = 'transparent'
+    this.emailHTMLInput.style.border = 'none'
+    this.emailHTMLInput.style.outline = 'none'
+    this.emailHTMLInput.style.color = 'transparent'
+    this.emailHTMLInput.style.fontSize = `${18 * scaleY}px`
+    this.emailHTMLInput.style.textAlign = 'center'
+    this.emailHTMLInput.style.pointerEvents = 'auto'
+    this.emailHTMLInput.style.zIndex = '10000'
+    
+    // Position email input (accounting for canvas position and scaling)
+    const emailX = canvasRect.left + (emailBoxX * scaleX)
+    const emailY = canvasRect.top + (emailBoxY * scaleY)
+    this.emailHTMLInput.style.left = `${emailX}px`
+    this.emailHTMLInput.style.top = `${emailY}px`
+    
+    // Append to body (not canvas container, to ensure proper z-index)
+    document.body.appendChild(this.initialsHTMLInput)
+    document.body.appendChild(this.emailHTMLInput)
+    
+    // Set up event listeners for syncing
+    this.initialsHTMLInput.addEventListener('input', () => this.syncInitialsFromHTML())
+    this.initialsHTMLInput.addEventListener('keydown', (e) => {
+      // Handle Enter/Tab to switch to email field
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault()
+        this.currentInput = 'email'
+        this.updateInputHighlight()
+        if (this.emailHTMLInput) {
+          this.emailHTMLInput.focus()
+        }
       }
-      
-      // Check if we're showing the top 10 leaderboard (no input fields)
-      if (!this.initialsInput || !this.emailInput || (this.currentInput !== 'initials' && this.currentInput !== 'email')) {
-        // Press any key to continue
-        this.restartGame()
-        return
+      // Restrict to letters only
+      if (e.key.length === 1 && !/[A-Za-z]/.test(e.key)) {
+        e.preventDefault()
       }
-      
-      // Handle input based on current input field
+    })
+    this.initialsHTMLInput.addEventListener('focus', () => {
+      // Update currentInput when focused
+      this.currentInput = 'initials'
+      this.updateInputHighlight()
+    })
+    this.initialsHTMLInput.addEventListener('blur', () => {
+      // Update currentInput when blurring
       if (this.currentInput === 'initials') {
-        this.handleInitialsInput(event.key)
-      } else if (this.currentInput === 'email') {
-        this.handleEmailInput(event.key)
+        this.updateInputHighlight()
       }
     })
     
-    // Only set up click handlers if input fields exist
-    if (this.initialsInput && this.emailInput) {
-      this.initialsInput.setInteractive()
-      this.initialsInput.on('pointerdown', () => {
+    this.emailHTMLInput.addEventListener('input', () => this.syncEmailFromHTML())
+    this.emailHTMLInput.addEventListener('focus', () => {
+      // Update currentInput when focused
+      this.currentInput = 'email'
+      this.updateInputHighlight()
+    })
+    this.emailHTMLInput.addEventListener('keydown', (e) => {
+      // Handle Enter/Tab to switch to initials field or submit
+      if (e.key === 'Tab') {
+        e.preventDefault()
         this.currentInput = 'initials'
         this.updateInputHighlight()
-      })
-      
-      this.emailInput.setInteractive()
-      this.emailInput.on('pointerdown', () => {
-        this.currentInput = 'email'
+        if (this.initialsHTMLInput) {
+          this.initialsHTMLInput.focus()
+        }
+      }
+    })
+    this.emailHTMLInput.addEventListener('blur', () => {
+      // Update currentInput when blurring
+      if (this.currentInput === 'email') {
         this.updateInputHighlight()
-      })
-      
+      }
+    })
+  }
+
+  private syncInitialsFromHTML() {
+    if (!this.initialsHTMLInput) return
+    
+    // Get value and convert to uppercase
+    let value = this.initialsHTMLInput.value.toUpperCase()
+    
+    // Restrict to letters only and max 3 characters
+    value = value.replace(/[^A-Za-z]/g, '').slice(0, 3)
+    this.initialsHTMLInput.value = value
+    
+    // Update Phaser text
+    this.initialsText = value
+    if (this.initialsInput) {
+      this.initialsInput.setText(this.initialsText)
+    }
+  }
+
+  private syncEmailFromHTML() {
+    if (!this.emailHTMLInput) return
+    
+    // Get value
+    const value = this.emailHTMLInput.value
+    
+    // Update Phaser text
+    this.emailText = value
+    if (this.emailInput) {
+      this.emailInput.setText(this.emailText)
+    }
+  }
+
+  private cleanupHTMLInputs() {
+    if (this.initialsHTMLInput) {
+      this.initialsHTMLInput.remove()
+      this.initialsHTMLInput = undefined
+    }
+    if (this.emailHTMLInput) {
+      this.emailHTMLInput.remove()
+      this.emailHTMLInput = undefined
+    }
+  }
+
+  private setupLeaderboardInput() {
+    // Only set up click handlers if input fields exist
+    if (this.initialsInput && this.emailInput) {
       // Initialize with initials input
       this.currentInput = 'initials'
       this.initialsText = ''
       this.emailText = ''
       this.updateInputHighlight()
+      
+      // On mobile, create HTML inputs and focus initials to trigger keyboard
+      if (this.isMobileDevice()) {
+        // Clean up any existing HTML inputs first
+        this.cleanupHTMLInputs()
+        // Create HTML inputs
+        this.createHTMLInputs()
+        // Auto-focus initials input to trigger mobile keyboard
+        // Use a small delay to ensure DOM is ready
+        setTimeout(() => {
+          if (this.initialsHTMLInput) {
+            this.initialsHTMLInput.focus()
+          }
+        }, 100)
+      } else {
+        // Desktop: Use Phaser keyboard input
+        this.initialsInput.setInteractive()
+        this.initialsInput.on('pointerdown', () => {
+          this.currentInput = 'initials'
+          this.updateInputHighlight()
+        })
+        
+        this.emailInput.setInteractive()
+        this.emailInput.on('pointerdown', () => {
+          this.currentInput = 'email'
+          this.updateInputHighlight()
+        })
+        
+        // Clear existing keyboard handlers
+        this.input.keyboard!.off('keydown')
+        
+        // Set up keyboard input for leaderboard
+        this.input.keyboard!.on('keydown', (event: KeyboardEvent) => {
+          // Prevent default behavior for certain keys
+          if (event.key === 'Tab') {
+            event.preventDefault()
+          }
+          
+          // Handle input based on current input field
+          if (this.currentInput === 'initials') {
+            this.handleInitialsInput(event.key)
+          } else if (this.currentInput === 'email') {
+            this.handleEmailInput(event.key)
+          }
+        })
+      }
     } else {
       // For top 10 leaderboard, just set up basic input
       this.currentInput = 'initials'
       this.initialsText = ''
       this.emailText = ''
+      
+      // Clean up HTML inputs if they exist
+      this.cleanupHTMLInputs()
+      
+      // Set up keyboard handler for "press any key to continue"
+      this.input.keyboard!.off('keydown')
+      this.input.keyboard!.on('keydown', () => {
+        this.restartGame()
+      })
     }
   }
 
@@ -2660,6 +2874,10 @@ class PlayScene extends Phaser.Scene {
       this.emailInput = undefined
       console.log('🧹 Destroyed email input')
     }
+    
+    // Clean up HTML inputs (mobile)
+    this.cleanupHTMLInputs()
+    console.log('🧹 Cleaned up HTML inputs')
     if (this.submitButton) {
       this.submitButton.destroy()
       this.submitButton = undefined
