@@ -45,6 +45,7 @@ class PlayScene extends Phaser.Scene {
   private winnerSubText?: Phaser.GameObjects.Text
   private heartParticles?: Phaser.GameObjects.Particles.ParticleEmitter
   private sparkleParticles?: Phaser.GameObjects.Particles.ParticleEmitter
+  private loadingText?: Phaser.GameObjects.Text
   private baseSpeed: number = 600 // Higher base speed for high-tempo gameplay
   private speedMultiplier: number = 1.0
   private levelSpeed: number = 1.0 // Speed multiplier for current level
@@ -119,6 +120,27 @@ class PlayScene extends Phaser.Scene {
   }
 
   preload() {
+    // Create loading text indicator
+    const width = this.scale.width
+    const height = this.scale.height
+    this.loadingText = this.add.text(width / 2, height / 2, 'Loading... 0%', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '32px',
+      color: '#00ff00',
+      stroke: '#000000',
+      strokeThickness: 3,
+    })
+    this.loadingText.setOrigin(0.5, 0.5)
+    this.loadingText.setDepth(10000) // Above everything
+    
+    // Update loading text with progress
+    this.load.on('progress', (value: number) => {
+      if (this.loadingText) {
+        const percent = Math.round(value * 100)
+        this.loadingText.setText(`Loading... ${percent}%`)
+      }
+    })
+    
     // DJ1 sprites
     this.load.image('dj_left', 'assets/dj.png')
     this.load.image('dj_right', 'assets/djr.png')
@@ -292,6 +314,12 @@ class PlayScene extends Phaser.Scene {
   }
 
   create() {
+    // Remove loading text once loading is complete
+    if (this.loadingText) {
+      this.loadingText.destroy()
+      this.loadingText = undefined
+    }
+    
     const width = this.scale.width
     const height = this.scale.height
 
