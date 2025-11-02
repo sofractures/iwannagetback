@@ -2319,18 +2319,6 @@ class PlayScene extends Phaser.Scene {
     document.body.appendChild(this.initialsHTMLInput)
     document.body.appendChild(this.emailHTMLInput)
     
-    // Immediately attempt to focus initials input while still in user gesture context
-    // This should trigger the mobile keyboard automatically
-    requestAnimationFrame(() => {
-      if (this.initialsHTMLInput) {
-        try {
-          this.initialsHTMLInput.focus({ preventScroll: false })
-        } catch (e) {
-          console.log('Immediate focus attempt:', e)
-        }
-      }
-    })
-    
     // Set up event listeners for syncing
     this.initialsHTMLInput.addEventListener('input', () => this.syncInitialsFromHTML())
     this.initialsHTMLInput.addEventListener('keydown', (e) => {
@@ -2435,23 +2423,14 @@ class PlayScene extends Phaser.Scene {
       this.emailText = ''
       this.updateInputHighlight()
       
-      // On mobile, create HTML inputs and focus initials to trigger keyboard
+      // On mobile, create HTML inputs (users tap fields to trigger keyboard)
       if (this.isMobileDevice()) {
         // Clean up any existing HTML inputs first
         this.cleanupHTMLInputs()
-        // Create HTML inputs (this will attempt immediate focus)
+        // Create HTML inputs
+        // Note: Auto-focus doesn't work reliably on mobile browsers
+        // Users will tap the field to trigger keyboard (which works perfectly)
         this.createHTMLInputs()
-        // Additional focus attempt after a short delay as fallback
-        // This ensures keyboard appears even if immediate focus didn't work
-        setTimeout(() => {
-          if (this.initialsHTMLInput) {
-            try {
-              this.initialsHTMLInput.focus({ preventScroll: false })
-            } catch (e) {
-              console.log('Fallback focus attempt:', e)
-            }
-          }
-        }, 150)
       } else {
         // Desktop: Use Phaser keyboard input
         this.initialsInput.setInteractive()
