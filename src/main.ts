@@ -1709,11 +1709,11 @@ class PlayScene extends Phaser.Scene {
     console.log('Game Over!')
     this.gameOverState = true
     
-    // Start pixelate effect
-    this.startPixelateEffect()
+    // Start lightweight fade-to-black effect (reliable on mobile)
+    this.startGameOverFade()
   }
-
-  private startPixelateEffect() {
+  
+  private startGameOverFade() {
     // Play death sound effect
     try {
       this.deathSound = this.sound.add('deathSound', { volume: this.isMuted ? 0 : 0.7 })
@@ -1722,58 +1722,39 @@ class PlayScene extends Phaser.Scene {
       console.log('Could not play death sound:', error)
     }
     
-    // Create a pixelated overlay that starts transparent and becomes opaque
-    const pixelOverlay = this.add.graphics()
-    pixelOverlay.setDepth(3000) // Highest depth
-    pixelOverlay.setScrollFactor(0)
-    pixelOverlay.setAlpha(0) // Start transparent
+    // Create full-screen black overlay and fade it in quickly
+    const overlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 1)
+    overlay.setOrigin(0, 0)
+    overlay.setScrollFactor(0)
+    overlay.setDepth(3000)
+    overlay.setAlpha(0)
     
-    // Animate pixelation by gradually increasing pixel size and opacity
-    let currentPixelSize = 1
-    const pixelateTween = this.tweens.addCounter({
-      from: 1,
-      to: 25, // Maximum pixel size
-      duration: 300, // 0.3 seconds - much faster
-      ease: 'Power2.easeIn',
-      onUpdate: (tween) => {
-        currentPixelSize = Math.floor(tween.getValue() || 0)
-        const progress = tween.progress
-        const alpha = Math.min(progress * 2, 1) // Fade in quickly
-        
-        pixelOverlay.clear()
-        pixelOverlay.setAlpha(alpha)
-        
-        // Draw pixelated effect
-        const newPixelWidth = this.scale.width / currentPixelSize
-        const newPixelHeight = this.scale.height / currentPixelSize
-        
-        for (let x = 0; x < newPixelWidth; x++) {
-          for (let y = 0; y < newPixelHeight; y++) {
-            // Random color for each pixel (creates glitch effect)
-            const randomColor = Phaser.Math.Between(0, 0xffffff)
-            pixelOverlay.fillStyle(randomColor)
-            pixelOverlay.fillRect(
-              x * currentPixelSize, 
-              y * currentPixelSize, 
-              currentPixelSize, 
-              currentPixelSize
-            )
-          }
-        }
-      },
+    this.tweens.add({
+      targets: overlay,
+      alpha: 1,
+      duration: 250,
+      ease: 'Power2',
       onComplete: () => {
-        // After pixelation, show the game over screen
         this.showGameOverScreen()
-        pixelOverlay.destroy()
+        overlay.destroy()
       }
     })
   }
 
   private showGameOverScreen() {
-    // Stop all timers
-    this.spawnTimer.destroy()
-    this.collectibleTimer.destroy()
-    this.enemyTimer.destroy()
+    // Stop all timers (defensive checks)
+    if (this.spawnTimer) {
+      try { this.spawnTimer.destroy() } catch {}
+      this.spawnTimer = undefined as any
+    }
+    if (this.collectibleTimer) {
+      try { this.collectibleTimer.destroy() } catch {}
+      this.collectibleTimer = undefined as any
+    }
+    if (this.enemyTimer) {
+      try { this.enemyTimer.destroy() } catch {}
+      this.enemyTimer = undefined as any
+    }
     if (this.freezeTimer) {
       this.freezeTimer.destroy()
     }
