@@ -46,6 +46,7 @@ class PlayScene extends Phaser.Scene {
   private heartParticles?: Phaser.GameObjects.Particles.ParticleEmitter
   private sparkleParticles?: Phaser.GameObjects.Particles.ParticleEmitter
   private loadingText?: Phaser.GameObjects.Text
+  private bossInstructionText?: Phaser.GameObjects.Text
   private baseSpeed: number = 600 // Higher base speed for high-tempo gameplay
   private speedMultiplier: number = 1.0
   private levelSpeed: number = 1.0 // Speed multiplier for current level
@@ -1354,6 +1355,33 @@ class PlayScene extends Phaser.Scene {
     sprite.setImmovable(false)
     sprite.body.allowGravity = true
     sprite.setBounce(0)
+  }
+
+  private pauseCollectibleSpawning() {
+    // Stop future spawns
+    if (this.collectibleTimer) {
+      try {
+        this.collectibleTimer.destroy()
+      } catch {}
+      this.collectibleTimer = undefined as any
+    }
+    // Remove any currently spawned collectibles to prevent farming during boss
+    if (this.collectibles) {
+      this.collectibles.clear(true, true)
+    }
+  }
+
+  private resumeCollectibleSpawning() {
+    // Don't resume if a boss is still active
+    if (this.currentBoss) return
+    // If already running, do nothing
+    if (this.collectibleTimer) return
+    // Respect countdown state; spawner will early-return if countdownActive
+    this.collectibleTimer = this.time.addEvent({
+      delay: 900,
+      loop: true,
+      callback: () => this.spawnCollectible(),
+    })
   }
 
   private collectCollectible(collectible: Phaser.GameObjects.Sprite) {
@@ -3122,6 +3150,9 @@ class PlayScene extends Phaser.Scene {
     this.lastBossX = this.currentBoss.x
     this.lastBossY = this.currentBoss.y
     
+    // Pause collectible spawning and clear any existing collectibles to prevent farming
+    this.pauseCollectibleSpawning()
+
     // Play boss spawn sound
     try {
       this.bossSpawnSound = this.sound.add('bossSpawnSound', { volume: this.isMuted ? 0 : 0.8 })
@@ -3129,6 +3160,9 @@ class PlayScene extends Phaser.Scene {
     } catch (error) {
       console.log('Could not play boss spawn sound:', error)
     }
+    
+    // Show instruction text when boss spawns
+    this.showBossInstruction()
     
     // Boss uses hit system (no visible health bar)
     
@@ -3152,7 +3186,42 @@ class PlayScene extends Phaser.Scene {
 
   // Boss hit system - no visual health bar needed
 
-
+  private showBossInstruction() {
+    // Clean up any existing instruction text
+    if (this.bossInstructionText) {
+      this.bossInstructionText.destroy()
+      this.bossInstructionText = undefined
+    }
+    
+    const width = this.scale.width
+    const height = this.scale.height
+    
+    // Create instruction text at top of screen (less intrusive)
+    this.bossInstructionText = this.add.text(width / 2, 40, 'Stomp on the boss to advance to the next level!', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '18px',
+      color: '#00ff00',
+      stroke: '#000000',
+      strokeThickness: 3,
+      align: 'center',
+    })
+    this.bossInstructionText.setOrigin(0.5, 0.5)
+    this.bossInstructionText.setDepth(10001) // Above boss and everything else
+    
+    // Fade out after 4 seconds
+    this.tweens.add({
+      targets: this.bossInstructionText,
+      alpha: 0,
+      duration: 1000, // 1 second fade
+      delay: 3000, // Show for 3 seconds, then fade over 1 second (total 4 seconds)
+      onComplete: () => {
+        if (this.bossInstructionText) {
+          this.bossInstructionText.destroy()
+          this.bossInstructionText = undefined
+        }
+      }
+    })
+  }
 
   private defeatBoss() {
     if (!this.currentBoss) return
@@ -3162,6 +3231,12 @@ class PlayScene extends Phaser.Scene {
     this.bossDefeated = true
     this.lastBossDeathScore = this.score
     this.defeatedBosses.add(bossNumber)
+    
+    // Clean up instruction text if still visible
+    if (this.bossInstructionText) {
+      this.bossInstructionText.destroy()
+      this.bossInstructionText = undefined
+    }
     
     // Play boss death sound
     try {
@@ -3186,6 +3261,9 @@ class PlayScene extends Phaser.Scene {
     this.currentBoss.destroy()
     this.currentBoss = undefined
     
+    // Resume collectible spawning now that boss is gone
+    this.resumeCollectibleSpawning()
+
     // Add score bonus
     this.score += 500
     
