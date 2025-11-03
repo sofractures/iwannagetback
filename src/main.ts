@@ -1357,6 +1357,33 @@ class PlayScene extends Phaser.Scene {
     sprite.setBounce(0)
   }
 
+  private pauseCollectibleSpawning() {
+    // Stop future spawns
+    if (this.collectibleTimer) {
+      try {
+        this.collectibleTimer.destroy()
+      } catch {}
+      this.collectibleTimer = undefined as any
+    }
+    // Remove any currently spawned collectibles to prevent farming during boss
+    if (this.collectibles) {
+      this.collectibles.clear(true, true)
+    }
+  }
+
+  private resumeCollectibleSpawning() {
+    // Don't resume if a boss is still active
+    if (this.currentBoss) return
+    // If already running, do nothing
+    if (this.collectibleTimer) return
+    // Respect countdown state; spawner will early-return if countdownActive
+    this.collectibleTimer = this.time.addEvent({
+      delay: 900,
+      loop: true,
+      callback: () => this.spawnCollectible(),
+    })
+  }
+
   private collectCollectible(collectible: Phaser.GameObjects.Sprite) {
     // Only collect if game has started
     if (!this.gameStarted || this.gameOverState) {
@@ -3123,6 +3150,9 @@ class PlayScene extends Phaser.Scene {
     this.lastBossX = this.currentBoss.x
     this.lastBossY = this.currentBoss.y
     
+    // Pause collectible spawning and clear any existing collectibles to prevent farming
+    this.pauseCollectibleSpawning()
+
     // Play boss spawn sound
     try {
       this.bossSpawnSound = this.sound.add('bossSpawnSound', { volume: this.isMuted ? 0 : 0.8 })
@@ -3166,13 +3196,13 @@ class PlayScene extends Phaser.Scene {
     const width = this.scale.width
     const height = this.scale.height
     
-    // Create instruction text centered on screen
-    this.bossInstructionText = this.add.text(width / 2, height / 2, 'Stomp on the boss to advance to the next level!', {
+    // Create instruction text at top of screen (less intrusive)
+    this.bossInstructionText = this.add.text(width / 2, 40, 'Stomp on the boss to advance to the next level!', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '28px',
+      fontSize: '18px',
       color: '#00ff00',
       stroke: '#000000',
-      strokeThickness: 4,
+      strokeThickness: 3,
       align: 'center',
     })
     this.bossInstructionText.setOrigin(0.5, 0.5)
@@ -3231,6 +3261,9 @@ class PlayScene extends Phaser.Scene {
     this.currentBoss.destroy()
     this.currentBoss = undefined
     
+    // Resume collectible spawning now that boss is gone
+    this.resumeCollectibleSpawning()
+
     // Add score bonus
     this.score += 500
     
