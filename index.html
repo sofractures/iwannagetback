@@ -237,14 +237,21 @@
           font-size: 1.5rem;
         }
         
-        /* Mobile Listen Now Button */
+        /* Mobile Listen Now Button: make static, align right, much smaller */
         .listen-now-container {
-          margin: 20px 0;
+          position: static;
+          top: auto;
+          right: auto;
+          z-index: auto;
+          width: 100%;
+          margin: 10px 0 0 0;
           padding: 0 10px;
+          display: block;
+          text-align: right;
         }
         
         .listen-now-button img {
-          max-width: 160px;
+          max-width: 56px; /* ~60% smaller than desktop (140px -> 56px) */
         }
       }
       
@@ -301,14 +308,17 @@
           font-size: 1.3rem;
         }
         
-        /* Small Mobile Listen Now Button */
+        /* Small Mobile Listen Now Button: keep static and right-aligned */
         .listen-now-container {
-          margin: 15px 0;
+          position: static;
+          width: 100%;
+          margin: 8px 0 0 0;
           padding: 0 5px;
+          text-align: right;
         }
         
         .listen-now-button img {
-          max-width: 140px;
+          max-width: 56px;
         }
       }
     </style>
