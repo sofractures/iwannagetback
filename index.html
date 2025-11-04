@@ -145,28 +145,30 @@
       
       /* Listen Now Button Styles */
       .listen-now-container {
-        display: flex;
-        justify-content: center;
-        margin: 30px 0;
-        max-width: 800px;
-        width: 100%;
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 5000;
+        display: block;
+        margin: 0;
       }
       
       .listen-now-button {
         display: inline-block;
-        transition: transform 0.3s ease, filter 0.3s ease;
+        transition: transform 0.2s ease, filter 0.2s ease;
         text-decoration: none;
         border-radius: 10px;
         overflow: hidden;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        box-shadow: none; /* remove drop shadow (appears like a border) */
         border: none;
         outline: none;
+        background: transparent;
       }
       
       .listen-now-button:hover {
-        transform: translateY(-3px) scale(1.05);
-        filter: brightness(1.1);
-        box-shadow: 0 12px 25px rgba(0,0,0,0.4);
+        transform: translateY(-2px) scale(1.03);
+        filter: brightness(1.05);
+        box-shadow: none; /* keep clean edge */
       }
       
       .listen-now-button img {
@@ -174,8 +176,9 @@
         max-width: 200px;
         height: auto;
         border-radius: 8px;
-        border: none;
+        border: none; /* ensure no CSS border */
         outline: none;
+        background: transparent;
       }
       
       
