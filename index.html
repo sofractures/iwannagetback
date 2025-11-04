@@ -145,37 +145,40 @@
       
       /* Listen Now Button Styles */
       .listen-now-container {
-        display: flex;
-        justify-content: center;
-        margin: 30px 0;
-        max-width: 800px;
-        width: 100%;
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 5000;
+        display: block;
+        margin: 0;
       }
       
       .listen-now-button {
         display: inline-block;
-        transition: transform 0.3s ease, filter 0.3s ease;
+        transition: transform 0.2s ease, filter 0.2s ease;
         text-decoration: none;
         border-radius: 10px;
         overflow: hidden;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        box-shadow: none; /* remove drop shadow (appears like a border) */
         border: none;
         outline: none;
+        background: transparent;
       }
       
       .listen-now-button:hover {
-        transform: translateY(-3px) scale(1.05);
-        filter: brightness(1.1);
-        box-shadow: 0 12px 25px rgba(0,0,0,0.4);
+        transform: translateY(-2px) scale(1.03);
+        filter: brightness(1.05);
+        box-shadow: none; /* keep clean edge */
       }
       
       .listen-now-button img {
         display: block;
-        max-width: 200px;
+        max-width: 140px; /* reduced by ~30% */
         height: auto;
         border-radius: 8px;
-        border: none;
+        border: none; /* ensure no CSS border */
         outline: none;
+        background: transparent;
       }
       
       
@@ -327,18 +330,45 @@
       <p><strong>🎵 Play the game to get a free download of the new Sound of Fractures release 'I Wanna Get Back' and enter into daily draws for free merch. See below for how to play!</strong></p>
     </div>
     
-    <!-- Listen Now Button -->
-    <div class="listen-now-container">
-      <a href="https://symphony.to/sound-of-fractures/i-wanna-get-back" target="_blank" rel="noopener noreferrer" class="listen-now-button">
-        <img src="/assets/listennowbutton.png" alt="Listen Now" />
-      </a>
-    </div>
+    
     
     <div class="gameplay-description">
       <h2>Gameplay</h2>
       <p>Your mission is to race back through time, gathering nostalgic treasures before they vanish into the scroll. Scattered across each level are nostalgic items: iPods, vinyl, CDs, mixtapes, photographs, and even the indestructible phone. Collect them to build your wellbeing score and stay grounded in what really matters.</p>
       
       <p>But beware, the digital world fights back. Pop-up ads, mobile phones, and endless notifications will try to distract you, pulling you deeper into the doomscroll. Dodge, jump, and fight to keep your memories safe. <strong>When bosses appear, stomp on them from above to defeat them and advance to the next level!</strong> Top scorers and finishers will also be entered into exclusive merch giveaways, because sometimes the best rewards live outside the screen.</p>
+    </div>
+    
+    <div id="web-leaderboard" style="max-width:800px;margin:20px auto 0 auto;color:white;border:1px solid rgba(255,255,255,0.2);border-radius:12px;overflow:hidden;background:rgba(255,255,255,0.06)">
+      <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.15);display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0;font-size:18px;color:#4ecdc4">Top 20 Leaderboard</h2>
+        <span id="web-leaderboard-status" style="font-size:12px;color:rgba(255,255,255,0.7)">Loading…</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <thead>
+            <tr style="background:rgba(0,0,0,0.2)">
+              <th style="text-align:left;padding:10px 12px;color:rgba(255,255,255,0.9)">Rank</th>
+              <th style="text-align:left;padding:10px 12px;color:rgba(255,255,255,0.9)">Initials</th>
+              <th style="text-align:right;padding:10px 12px;color:rgba(255,255,255,0.9)">Score</th>
+            </tr>
+          </thead>
+          <tbody id="web-leaderboard-body">
+            <tr>
+              <td style="padding:10px 12px;color:rgba(255,255,255,0.8)">—</td>
+              <td style="padding:10px 12px;color:rgba(255,255,255,0.8)">—</td>
+              <td style="padding:10px 12px;text-align:right;color:rgba(255,255,255,0.8)">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Listen Now Button (moved to bottom under leaderboard) -->
+    <div class="listen-now-container">
+      <a href="https://symphony.to/sound-of-fractures/i-wanna-get-back" target="_blank" rel="noopener noreferrer" class="listen-now-button">
+        <img src="/assets/listennowbutton.png" alt="Listen Now" />
+      </a>
     </div>
     
     
@@ -458,5 +488,46 @@
       });
     </script>
     <script type="module" src="/src/main.ts"></script>
+    <script type="module">
+      import { getLeaderboard } from '/src/supabase.ts'
+      
+      async function loadWebLeaderboard() {
+        const statusEl = document.getElementById('web-leaderboard-status')
+        const bodyEl = document.getElementById('web-leaderboard-body')
+        if (!statusEl || !bodyEl) return
+        try {
+          statusEl.textContent = 'Loading…'
+          const top = await getLeaderboard(20)
+          bodyEl.innerHTML = ''
+          if (!top || top.length === 0) {
+            const tr = document.createElement('tr')
+            tr.innerHTML = `<td style="padding:10px 12px;color:rgba(255,255,255,0.8)">—</td>
+                             <td style="padding:10px 12px;color:rgba(255,255,255,0.8)">No scores yet</td>
+                             <td style="padding:10px 12px;text-align:right;color:rgba(255,255,255,0.8)">—</td>`
+            bodyEl.appendChild(tr)
+            statusEl.textContent = 'Updated'
+            return
+          }
+          top.forEach((row, idx) => {
+            const tr = document.createElement('tr')
+            tr.style.background = idx % 2 === 0 ? 'rgba(0,0,0,0.15)' : 'transparent'
+            const rank = idx + 1
+            const initials = (row.initials || '').toString().toUpperCase()
+            const score = Number(row.score || 0).toLocaleString()
+            tr.innerHTML = `<td style="padding:10px 12px;color:#ffffff">${rank}</td>
+                            <td style="padding:10px 12px;color:#ffffff">${initials}</td>
+                            <td style="padding:10px 12px;text-align:right;color:#ffffff">${score}</td>`
+            bodyEl.appendChild(tr)
+          })
+          statusEl.textContent = `Updated • ${new Date().toLocaleTimeString()}`
+        } catch (e) {
+          console.error('Failed to load web leaderboard', e)
+          statusEl.textContent = 'Failed to load'
+        }
+      }
+      // Load immediately and refresh every 60s
+      loadWebLeaderboard()
+      setInterval(loadWebLeaderboard, 60000)
+    </script>
   </body>
 </html>
