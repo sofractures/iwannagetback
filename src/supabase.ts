@@ -14,7 +14,7 @@ export const supabase = createClient(supabaseUrl || '', supabaseKey || '')
 export interface LeaderboardEntry {
   id: number
   initials: string
-  email: string
+  email?: string  // Optional - not returned by getLeaderboard() for privacy
   score: number
   created_at: string
 }
