@@ -1,9 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Supabase configuration
-const supabaseUrl = 'https://fmvglofbpsodvpqpolqk.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZtdmdsb2ZicHNvZHZwcXBvbHFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUwNDQ4NzQsImV4cCI6MjA1MDYyMDg3NH0.2J8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8'
-const supabase = createClient(supabaseUrl, supabaseKey)
+// Use the shared Supabase client from supabase.ts
+// This file should import from supabase.ts to avoid duplicating credentials
+import { supabase } from './supabase.ts'
 
 // DOM elements
 const commentName = document.getElementById('commentName')
