@@ -15,12 +15,16 @@
 ### 3. Get Your Project Credentials
 1. Go to Settings > API in your Supabase dashboard
 2. Copy your Project URL and anon/public key
-3. Update `src/supabase.ts` with your credentials:
+3. Create a `.env` file in the project root (copy from `.env.example`):
 
-```typescript
-const supabaseUrl = 'YOUR_SUPABASE_URL' // Replace with your project URL
-const supabaseKey = 'YOUR_SUPABASE_ANON_KEY' // Replace with your anon key
+```bash
+# .env file (do not commit this file!)
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ```
+
+4. For production (Vercel), add these environment variables in:
+   - Vercel Dashboard > Your Project > Settings > Environment Variables
 
 ### 4. Test the Setup
 1. Run your game: `npm run dev`
